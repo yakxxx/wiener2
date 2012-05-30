@@ -1,8 +1,14 @@
+#include <boost/program_options.hpp>
+#include <iostream>
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
 
 using namespace cv;
+using namespace std;
+namespace po = boost::program_options;
+
+
 Mat wiener2(Mat I, Mat image_spectrum, int noise_stddev);
 Mat padd_image(Mat I);
 
@@ -14,7 +20,30 @@ Mat rand_noise(Mat I, int stddev);
 
 
 
-int main(void) {
+int main(int argc, char *argv[]) {
+
+	int noise_stddev;
+	string filename;
+
+	po::options_description desc("Allowed options");
+	desc.add_options()
+	    ("help", "produce help message")
+	    ("noise-stddev, n", po::value<int>(&noise_stddev)->default_value(50), "set white noise standard deviation")
+	    ("input, f", po::value<string>(&filename))
+	    ("output, o")
+	    ("generate-noisy", "generate noisy image")
+	    ("generate-avg-spectrum", "generate average spectrum for given images")
+	;
+
+	po::variables_map vm;
+	po::store(po::parse_command_line(argc, argv, desc), vm);
+	po::notify(vm);
+
+	if (vm.count("help")) {
+	    cout << desc << "\n";
+	    return 1;
+	}
+
 	Mat  I = imread("lena_gray.bmp", CV_LOAD_IMAGE_GRAYSCALE);
 	                           //expand input image to optimal size
 	Mat padded = padd_image(I);
@@ -27,6 +56,7 @@ int main(void) {
 	imshow("image 3", enhanced);
 	waitKey();
 }
+
 
 Mat wiener2(Mat I, Mat image_spectrum, int noise_stddev){
 	Mat padded = padd_image(I);
@@ -92,4 +122,3 @@ Mat rand_noise(Mat I, int stddev){
 	randn(noise,Scalar::all(0), Scalar::all(stddev));
 	return noise;
 }
-
