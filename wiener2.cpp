@@ -23,37 +23,63 @@ Mat rand_noise(Mat I, int stddev);
 int main(int argc, char *argv[]) {
 
 	int noise_stddev;
-	string filename;
+	string input_filename, output_filename;
 
 	po::options_description desc("Allowed options");
 	desc.add_options()
 	    ("help", "produce help message")
 	    ("noise-stddev, n", po::value<int>(&noise_stddev)->default_value(50), "set white noise standard deviation")
-	    ("input, f", po::value<string>(&filename))
-	    ("output, o")
+	    ("input, f", po::value<string>(&input_filename))
+	    ("output, o", po::value<string>(&output_filename)->default_value(string("output.bmp")),"output file")
 	    ("generate-noisy", "generate noisy image")
-	    ("generate-avg-spectrum", "generate average spectrum for given images")
+	    ("show", "shows effects of filtering")
 	;
 
 	po::variables_map vm;
 	po::store(po::parse_command_line(argc, argv, desc), vm);
 	po::notify(vm);
 
+	cout << "noise standard deviation: " << noise_stddev << "\n";
+	cout << "input file: " << input_filename << "\n";
+
 	if (vm.count("help")) {
 	    cout << desc << "\n";
 	    return 1;
 	}
 
-	Mat  I = imread("lena_gray.bmp", CV_LOAD_IMAGE_GRAYSCALE);
-	                           //expand input image to optimal size
-	Mat padded = padd_image(I);
-	Mat noisy = with_noise(padded, 50);
-	Mat spectrum = get_spectrum(padded);
-	Mat enhanced = wiener2(noisy, spectrum, 50);
+	Mat I = imread(input_filename, CV_LOAD_IMAGE_GRAYSCALE);
+	if(I.data==NULL){
+		cout << "Can't open file: " << input_filename << "\n";
+		return 2;
+	}
 
-	imshow("image 1", I);
-	imshow("image 2", noisy);
-	imshow("image 3", enhanced);
+	Mat raw_sample = imread("sample.bmp", CV_LOAD_IMAGE_GRAYSCALE);
+	if(raw_sample.data==NULL){
+		cout << "Can't open file: sample.bmp\n";
+		return 3;
+	}
+
+	Mat padded = padd_image(I);
+	Mat noisy;
+	if(vm.count("generate-noisy")){
+		noisy = with_noise(padded, noise_stddev);
+		imwrite(output_filename, noisy);
+		return 0;
+	}else{
+		noisy = padded;
+	}
+
+	Mat sample(padded.rows, padded.cols, CV_8U);
+	resize(raw_sample, sample, sample.size());
+	Mat spectrum = get_spectrum(sample);
+	Mat enhanced = wiener2(noisy, spectrum, noise_stddev);
+
+	imwrite(output_filename, enhanced);
+
+	if(vm.count("show")){
+		imshow("image 1", noisy);
+		imshow("image 2", enhanced);
+	}
 	waitKey();
 }
 
@@ -67,8 +93,8 @@ Mat wiener2(Mat I, Mat image_spectrum, int noise_stddev){
 	Mat complexI = get_dft(padded);
 	split(complexI, planes);	// planes[0] = Re(DFT(I), planes[1] = Im(DFT(I))
 
-	Mat image_spectrum_2 = image_spectrum * image_spectrum;
-	Mat noise_spectrum_2 = noise_spectrum * noise_spectrum;
+	Mat image_spectrum_2 = image_spectrum ;//* image_spectrum;
+	Mat noise_spectrum_2 = noise_spectrum ;//* noise_spectrum;
 
 	Mat factor = image_spectrum_2 / (image_spectrum_2 + noise_spectrum_2);
 	multiply(planes[0],factor,planes[0]);
@@ -78,8 +104,11 @@ Mat wiener2(Mat I, Mat image_spectrum, int noise_stddev){
 	merge(planes, 2, complexI);
 	idft(complexI, complexI);
 	split(complexI, planes);
-	normalize(planes[0], planes[0], 0, 1, CV_MINMAX);
-	return planes[0];
+	normalize(planes[0], planes[0], 0, 255, CV_MINMAX);
+
+	Mat normalized;
+	planes[0].convertTo(normalized, CV_8UC1);
+	return normalized;
 }
 
 Mat padd_image(Mat I){
