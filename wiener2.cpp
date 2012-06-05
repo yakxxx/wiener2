@@ -93,10 +93,7 @@ Mat wiener2(Mat I, Mat image_spectrum, int noise_stddev){
 	Mat complexI = get_dft(padded);
 	split(complexI, planes);	// planes[0] = Re(DFT(I), planes[1] = Im(DFT(I))
 
-	Mat image_spectrum_2 = image_spectrum ;//* image_spectrum;
-	Mat noise_spectrum_2 = noise_spectrum ;//* noise_spectrum;
-
-	Mat factor = image_spectrum_2 / (image_spectrum_2 + noise_spectrum_2);
+	Mat factor = image_spectrum / (image_spectrum + noise_spectrum);
 	multiply(planes[0],factor,planes[0]);
 	multiply(planes[1],factor,planes[1]);
 
@@ -125,6 +122,7 @@ Mat get_spectrum(Mat I){
 	split(complexI, planes);                   // planes[0] = Re(DFT(I), planes[1] = Im(DFT(I))
 	magnitude(planes[0], planes[1], planes[0]);// planes[0] = magnitude
 	Mat magI = planes[0];
+	multiply(magI,magI,magI);
 	return magI;
 }
 
