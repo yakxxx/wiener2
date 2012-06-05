@@ -27,13 +27,13 @@ int main(int argc, char *argv[]) {
 
 	po::options_description desc("Allowed options");
 	desc.add_options()
-	    ("help", "produce help message")
-	    ("noise-stddev, n", po::value<int>(&noise_stddev)->default_value(50), "set white noise standard deviation")
-	    ("input, f", po::value<string>(&input_filename))
-	    ("output, o", po::value<string>(&output_filename)->default_value(string("output.bmp")),"output file")
-	    ("generate-noisy", "generate noisy image")
-	    ("show", "shows effects of filtering")
-	;
+	    		("help", "produce help message")
+	    		("noise-stddev, n", po::value<int>(&noise_stddev)->default_value(50), "set white noise standard deviation")
+	    		("input, f", po::value<string>(&input_filename))
+	    		("output, o", po::value<string>(&output_filename)->default_value(string("output.bmp")),"output file")
+	    		("generate-noisy", "generate noisy image")
+	    		("show", "shows effects of filtering")
+	    		;
 
 	po::variables_map vm;
 	po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -43,8 +43,8 @@ int main(int argc, char *argv[]) {
 	cout << "input file: " << input_filename << "\n";
 
 	if (vm.count("help")) {
-	    cout << desc << "\n";
-	    return 1;
+		cout << desc << "\n";
+		return 1;
 	}
 
 	Mat I = imread(input_filename, CV_LOAD_IMAGE_GRAYSCALE);
