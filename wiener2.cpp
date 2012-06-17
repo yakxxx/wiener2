@@ -89,6 +89,8 @@ Mat wiener2(Mat I, Mat image_spectrum, int noise_stddev){
 	Mat noise = rand_noise(padded, noise_stddev);
 	Mat noise_spectrum = get_spectrum(noise);
 
+	Scalar padded_mean = mean(padded);
+
 	Mat planes[2];
 	Mat complexI = get_dft(padded);
 	split(complexI, planes);	// planes[0] = Re(DFT(I), planes[1] = Im(DFT(I))
@@ -104,8 +106,10 @@ Mat wiener2(Mat I, Mat image_spectrum, int noise_stddev){
 	merge(planes, 2, complexI);
 	idft(complexI, complexI);
 	split(complexI, planes);
-	normalize(planes[0], planes[0], 0, 255, CV_MINMAX);
-
+//	normalize(planes[0], planes[0], 0, 128, CV_MINMAX );
+	Scalar enhanced_mean = mean(planes[0]);
+	double norm_factor =  padded_mean.val[0] / enhanced_mean.val[0];
+	multiply(planes[0],norm_factor, planes[0]);
 	Mat normalized;
 	planes[0].convertTo(normalized, CV_8UC1);
 	return normalized;
